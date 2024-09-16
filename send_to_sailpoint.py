@@ -1,9 +1,7 @@
 import http.client
 import json
-import sys
 
 def format_user_details(user_name):
-    # Split the user_name into parts for formatting
     name_parts = user_name.split(' ')
     if len(name_parts) > 1:
         given_name = name_parts[0]
@@ -57,9 +55,12 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
     }
 
 if __name__ == "__main__":
-    # Example usage; replace these with your actual values
-    user_name = 'defaultUserName'  # Provide default or actual user name
-    email = 'test.test@example.com'  # Replace with actual email
+    # Read data from last_entry.json
+    with open('last_entry.json') as json_file:
+        data = json.load(json_file)
+    
+    user_name = data.get('userName', 'defaultUserName')
+    email = data.get('email', 'default@example.com')
     api_url = '35.170.66.218'       # Replace with your API URL
     auth_header = 'Basic c3BhZG1pbjphZG1pbg=='  # Replace with your actual auth header
 
