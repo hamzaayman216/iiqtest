@@ -16,33 +16,33 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get install -y jq curl
 
-    - name: Extract new entries from CSV
-      id: extract_entries
+    - name: Extract the last entry from CSV
+      id: extract_last_entry
       run: |
-        # Extract entries from the CSV file
-        new_entries=$(tail -n +2 data.csv | jq -R -s -c 'split("\n") | map(split(",") | {name: .[0], email: .[1]})')
-        echo "::set-output name=new_entries::$new_entries"
+        # Extract the last line from the CSV file
+        last_entry=$(tail -n 1 data.csv)
+        # Convert to JSON format
+        entry_json=$(echo "$last_entry" | jq -R 'split(",") | {name: .[0], email: .[1]}')
+        echo "::set-output name=last_entry::$entry_json"
 
     - name: Send data to Lambda
       env:
         LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}
         LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
       run: |
-        # Ensure new_entries is correctly parsed
-        new_entries="${{ steps.extract_entries.outputs.new_entries }}"
+        # Ensure last_entry is correctly parsed
+        last_entry="${{ steps.extract_last_entry.outputs.last_entry }}"
         
-        # Convert new_entries to an array
-        echo "$new_entries" | jq -c '.[]' | while read -r entry; do
-          name=$(echo "$entry" | jq -r '.name')
-          email=$(echo "$entry" | jq -r '.email')
+        # Extract name and email
+        name=$(echo "$last_entry" | jq -r '.name')
+        email=$(echo "$last_entry" | jq -r '.email')
 
-          # Handle null values for name and email
-          if [ "$name" = "null" ]; then name=""; fi
-          if [ "$email" = "null" ]; then email=""; fi
+        # Handle null values for name and email
+        if [ "$name" = "null" ]; then name=""; fi
+        if [ "$email" = "null" ]; then email=""; fi
 
-          # Send the data to the Lambda function
-          curl -X POST $LAMBDA_FUNCTION_URL \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $LAMBDA_FUNCTION_API_KEY" \
-            -d '{"userName": "'"$name"'", "email": "'"$email"'"}'
-        done
+        # Send the data to the Lambda function
+        curl -X POST $LAMBDA_FUNCTION_URL \
+          -H "Content-Type: application/json" \
+          -H "x-api-key: $LAMBDA_FUNCTION_API_KEY" \
+          -d '{"userName": "'"$name"'", "email": "'"$email"'"}'
