@@ -30,9 +30,15 @@ jobs:
         LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}
         LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
       run: |
-        # Ensure last_entry is correctly parsed
+        # Retrieve the last entry from the output
         last_entry="${{ steps.extract_last_entry.outputs.last_entry }}"
         
+        # Ensure last_entry is a valid JSON
+        if [ -z "$last_entry" ] || [ "$last_entry" = "null" ]; then
+          echo "No valid last entry found."
+          exit 1
+        fi
+
         # Extract name and email
         name=$(echo "$last_entry" | jq -r '.name')
         email=$(echo "$last_entry" | jq -r '.email')
