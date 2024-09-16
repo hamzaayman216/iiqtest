@@ -51,4 +51,5 @@ jobs:
         # Send the data to the Lambda function
         curl -X POST $LAMBDA_FUNCTION_URL \
           -H "Content-Type: application/json" \
+          -H "x-api-key: $LAMBDA_FUNCTION_API_KEY" \
           -d '{"userName": "'"$name"'", "email": "'"$email"'"}'
