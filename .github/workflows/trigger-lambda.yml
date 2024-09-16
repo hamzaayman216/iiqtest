@@ -1,4 +1,4 @@
-name: Trigger Lambda on CSV Update
+name: Trigger SailPoint API on CSV Update
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'data.csv'  # Watch for changes to the CSV file
 
 jobs:
-  trigger-lambda:
+  trigger-sailpoint:
     runs-on: [self-hosted, Linux, X64]  # Use your runner's labels here
 
     steps:
@@ -23,7 +23,6 @@ jobs:
         python -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install requests
 
     - name: Cache Python dependencies
       uses: actions/cache@v3
@@ -39,10 +38,10 @@ jobs:
         source venv/bin/activate
         python process_csv.py
 
-    - name: Retrieve last entry and send to Lambda
+    - name: Send Data to SailPoint
       env:
-        LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}
-        LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
+        SAILPOINT_API_URL: '35.170.66.218'  # Replace with your API URL
+        SAILPOINT_AUTH_HEADER: 'Basic c3BhZG1pbjphZG1pbg=='  # Replace with your actual auth header
       run: |
         source venv/bin/activate
-        python send_to_lambda.py $LAMBDA_FUNCTION_URL $LAMBDA_FUNCTION_API_KEY
+        python send_to_sailpoint.py
