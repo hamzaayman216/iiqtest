@@ -44,6 +44,10 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
         'Authorization': auth_header
     }
 
+    # Validate URL
+    if not api_url.startswith(('http://', 'https://')):
+        raise ValueError("Invalid API URL. It must start with http:// or https://")
+
     try:
         response = requests.post(f'{api_url}/identityiq/scim/v2/Users', headers=headers, json=payload)
         response.raise_for_status()  # Raise HTTPError for bad responses
