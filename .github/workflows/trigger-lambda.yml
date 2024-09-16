@@ -7,49 +7,48 @@ on:
 
 jobs:
   trigger-lambda:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux, X64]  # Use your runner's labels here
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Install dependencies
-      run: sudo apt-get install -y jq curl
-
-    - name: Extract the last entry from CSV
-      id: extract_last_entry
       run: |
-        # Extract the last line from the CSV file
-        last_entry=$(tail -n 1 data.csv)
-        # Convert to JSON format
-        entry_json=$(echo "$last_entry" | jq -R 'split(",") | {name: .[0], email: .[1]}')
-        # Save the JSON data to a file
-        echo "$entry_json" > last_entry.json
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip
+        pip3 install requests
+
+    - name: Process CSV and Save to JSON
+      run: python3 process_csv.py
 
     - name: Retrieve last entry and send to Lambda
       env:
         LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}
         LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
       run: |
-        # Read the JSON data from the file
-        last_entry=$(cat last_entry.json)
+        import json
+        import requests
 
-        # Ensure last_entry is a valid JSON
-        if [ -z "$last_entry" ] || [ "$last_entry" = "null" ]; then
-          echo "No valid last entry found."
-          exit 1
-        fi
+        with open('last_entry.json') as f:
+            last_entry = json.load(f)
 
-        # Extract name and email
-        name=$(echo "$last_entry" | jq -r '.name')
-        email=$(echo "$last_entry" | jq -r '.email')
+        if not last_entry:
+            print("No valid last entry found.")
+            sys.exit(1)
 
-        # Handle null values for name and email
-        if [ "$name" = "null" ]; then name=""; fi
-        if [ "$email" = "null" ]; then email=""; fi
+        name = last_entry.get('name', '')
+        email = last_entry.get('email', '')
 
-        # Send the data to the Lambda function
-        curl -X POST $LAMBDA_FUNCTION_URL \
-          -H "Content-Type: application/json" \
-          -H "x-api-key: $LAMBDA_FUNCTION_API_KEY" \
-          -d '{"userName": "'"$name"'", "email": "'"$email"'"}'
+        response = requests.post(
+            url=${{ secrets.LAMBDA_FUNCTION_URL }},
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
+            },
+            json={
+                "userName": name,
+                "email": email
+            }
+        )
+        print(response.status_code, response.text)
