@@ -11,6 +11,7 @@ def process_csv_file(csv_file_path):
     try:
         with open(csv_file_path, mode='r') as file:
             reader = csv.reader(file)
+            headers = next(reader)  # Skip the header row
             for row in reader:
                 if len(row) >= 2:
                     user_name = row[0].strip()
