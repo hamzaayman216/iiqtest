@@ -3,7 +3,6 @@ import json
 import os
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def extract_last_entry(csv_file_path):
@@ -21,7 +20,6 @@ def extract_last_entry(csv_file_path):
     return last_entry
 
 def main():
-    # Use environment variables or command-line arguments to set file paths
     csv_file_path = os.getenv('CSV_FILE_PATH', 'data.csv')
     
     logging.info(f"Processing CSV file: {csv_file_path}")
@@ -32,14 +30,13 @@ def main():
         logging.error("Invalid CSV format or insufficient data.")
         raise ValueError("Invalid CSV format or insufficient data.")
     
-    user_name = last_entry[0].strip()  # Remove any leading/trailing whitespace
-    email = last_entry[1].strip()      # Remove any leading/trailing whitespace
+    user_name = last_entry[0].strip()
+    email = last_entry[1].strip()
     
     if not user_name or not email:
         logging.error("User name or email is missing.")
         raise ValueError("User name or email is missing.")
     
-    # Save to JSON file
     data = {
         'userName': user_name,
         'email': email
