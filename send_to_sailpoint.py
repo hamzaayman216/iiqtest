@@ -56,17 +56,14 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
     }
 
 if __name__ == "__main__":
-    # Read data from last_entry.json
     with open('last_entry.json') as json_file:
         data = json.load(json_file)
     
     user_name = data.get('userName', 'defaultUserName')
     email = data.get('email', 'default@example.com')
     
-    # Retrieve secrets from environment variables
-    api_url = os.getenv('SAILPOINT_API_URL', 'localhost')  # Default value if not set
-    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '')  # Default value if not set
+    api_url = os.getenv('SAILPOINT_API_URL', 'localhost') 
+    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '') 
 
     response = send_to_sailpoint(user_name, email, api_url, auth_header)
     print(f"Status Code: {response['statusCode']}")
-    print(f"Response Body: {response['body']}")
