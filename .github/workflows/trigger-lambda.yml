@@ -13,42 +13,62 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install dependencies
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'  # Use the desired Python version
+
+    - name: Create and activate virtual environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3 python3-pip
-        pip3 install requests
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install requests
+
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          venv/lib/python*/site-packages
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Process CSV and Save to JSON
-      run: python3 process_csv.py
+      run: |
+        source venv/bin/activate
+        python process_csv.py
 
     - name: Retrieve last entry and send to Lambda
       env:
         LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}
         LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
       run: |
-        import json
-        import requests
+        source venv/bin/activate
+        python -c "
+import json
+import requests
 
-        with open('last_entry.json') as f:
-            last_entry = json.load(f)
+with open('last_entry.json') as f:
+    last_entry = json.load(f)
 
-        if not last_entry:
-            print("No valid last entry found.")
-            sys.exit(1)
+if not last_entry:
+    print('No valid last entry found.')
+    exit(1)
 
-        name = last_entry.get('name', '')
-        email = last_entry.get('email', '')
+name = last_entry.get('name', '')
+email = last_entry.get('email', '')
 
-        response = requests.post(
-            url=${{ secrets.LAMBDA_FUNCTION_URL }},
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
-            },
-            json={
-                "userName": name,
-                "email": email
-            }
-        )
-        print(response.status_code, response.text)
+response = requests.post(
+    url='${{ secrets.LAMBDA_FUNCTION_URL }}',
+    headers={
+        'Content-Type': 'application/json',
+        'x-api-key': '${{ secrets.LAMBDA_FUNCTION_API_KEY }}'
+    },
+    json={
+        'userName': name,
+        'email': email
+    }
+)
+print(response.status_code, response.text)
+"
