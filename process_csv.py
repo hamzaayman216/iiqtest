@@ -4,9 +4,13 @@ import sys
 
 def extract_last_entry(csv_file_path):
     last_entry = None
-    with open(csv_file_path, 'r') as file:
-        reader = csv.reader(file)
-        last_entry = list(reader)[-1] if list(reader) else None
+    try:
+        with open(csv_file_path, 'r') as file:
+            reader = list(csv.reader(file))
+            if reader:
+                last_entry = reader[-1]
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
     return last_entry
 
 def save_entry_to_json(entry, json_file_path):
