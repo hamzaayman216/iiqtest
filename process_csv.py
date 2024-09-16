@@ -2,10 +2,12 @@ import csv
 import json
 import os
 import logging
+from send_to_sail_point import send_to_sailpoint, get_sailpoint_users, delete_user_in_sailpoint
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def extract_last_entry(csv_file_path):
+    """Extracts the last entry from the provided CSV file."""
     try:
         with open(csv_file_path, mode='r') as file:
             reader = csv.reader(file)
@@ -19,36 +21,52 @@ def extract_last_entry(csv_file_path):
         raise
     return last_entry
 
-def main():
-    csv_file_path = os.getenv('CSV_FILE_PATH', 'data.csv')
+def compare_and_sync_users(csv_file_path, api_url, auth_header):
+    """Compares CSV users with SailPoint users and syncs the data."""
+    logging.info("Starting comparison and synchronization process.")
     
-    logging.info(f"Processing CSV file: {csv_file_path}")
-    
+    # Extract last entry from the CSV file
     last_entry = extract_last_entry(csv_file_path)
-    
     if not last_entry or len(last_entry) < 2:
         logging.error("Invalid CSV format or insufficient data.")
         raise ValueError("Invalid CSV format or insufficient data.")
-    
-    user_name = last_entry[0].strip()
-    email = last_entry[1].strip()
-    
-    if not user_name or not email:
-        logging.error("User name or email is missing.")
-        raise ValueError("User name or email is missing.")
-    
-    data = {
-        'userName': user_name,
-        'email': email
-    }
-    
-    try:
-        with open('last_entry.json', 'w') as json_file:
-            json.dump(data, json_file, indent=4)
-        logging.info("Successfully saved data to last_entry.json")
-    except Exception as e:
-        logging.error(f"Error writing JSON file: {e}")
-        raise
+
+    # Retrieve the latest list of users from SailPoint
+    sailpoint_users = get_sailpoint_users(api_url, auth_header)
+    sailpoint_usernames = {user['userName']: user for user in sailpoint_users}
+
+    # Extract user info from the CSV file
+    csv_users = []
+    with open(csv_file_path, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if len(row) >= 2:
+                user_name = row[0].strip()
+                email = row[1].strip()
+                csv_users.append((user_name, email))
+
+    csv_usernames = {user[0] for user in csv_users}
+
+    # Users to be added
+    for user_name, email in csv_users:
+        if user_name not in sailpoint_usernames:
+            logging.info(f"Creating new user in SailPoint: {user_name}")
+            send_to_sailpoint(user_name, email, api_url, auth_header)
+
+    # Users to be deleted
+    for sailpoint_user in sailpoint_users:
+        if sailpoint_user['userName'] not in csv_usernames:
+            logging.info(f"Deleting user from SailPoint: {sailpoint_user['userName']}")
+            delete_user_in_sailpoint(sailpoint_user['id'], api_url, auth_header)
+
+def main():
+    """Main function to execute the CSV comparison and sync process."""
+    csv_file_path = os.getenv('CSV_FILE_PATH', 'data.csv')
+    api_url = os.getenv('SAILPOINT_API_URL', 'localhost')
+    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '')
+
+    logging.info(f"Processing CSV file: {csv_file_path}")
+    compare_and_sync_users(csv_file_path, api_url, auth_header)
 
 if __name__ == "__main__":
     main()
