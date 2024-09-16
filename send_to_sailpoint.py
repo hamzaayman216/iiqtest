@@ -2,8 +2,8 @@ import http.client
 import json
 import os
 
-SAILPOINT_API_URL = os.getenv('SAILPOINT_API_URL', '35.170.66.218')
-SAILPOINT_AUTH_HEADER = os.getenv('SAILPOINT_AUTH_HEADER', 'Basic c3BhZG1pbjphZG1pbg==')
+SAILPOINT_API_URL = os.getenv('SAILPOINT_API_URL', 'localhost')
+SAILPOINT_AUTH_HEADER = os.getenv('SAILPOINT_AUTH_HEADER', '')
 
 def format_user_details(user_name):
     name_parts = user_name.split(' ')
