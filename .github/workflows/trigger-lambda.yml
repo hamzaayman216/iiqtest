@@ -1,0 +1,43 @@
+name: Trigger Lambda on CSV Update
+
+on:
+  push:
+    paths:
+      - 'data.csv'  # Watch for changes to the CSV file
+
+jobs:
+  trigger-lambda:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: sudo apt-get install -y jq curl
+
+    - name: Extract new entries from CSV
+      id: extract_entries
+      run: |
+        # Extract entries from the CSV file
+        # This example assumes the CSV file has headers and two columns: 'Name' and 'Email'
+        # Adjust this based on the actual format of your CSV
+        new_entries=$(tail -n +2 data.csv | jq -R -s -c 'split("\n") | map(split(",") | {name: .[0], email: .[1]})')
+        echo "::set-output name=new_entries::$new_entries"
+
+    - name: Send data to Lambda
+      env:
+        LAMBDA_FUNCTION_URL: ${{ secrets.LAMBDA_FUNCTION_URL }}  # URL or ARN of your Lambda function
+        LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}  # API Key for the Lambda function (if needed)
+      run: |
+        # Loop through the new entries and send them to the Lambda function
+        for entry in $(echo "${{ steps.extract_entries.outputs.new_entries }}" | jq -c '.[]'); do
+          name=$(echo "$entry" | jq -r '.name')
+          email=$(echo "$entry" | jq -r '.email')
+
+          # Send the data to the Lambda function
+          curl -X POST $LAMBDA_FUNCTION_URL \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $LAMBDA_FUNCTION_API_KEY" \
+            -d '{"userName": "'"$name"'", "email": "'"$email"'"}'
+        done
