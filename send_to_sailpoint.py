@@ -1,6 +1,7 @@
 import os
 import json
-import requests
+import http.client
+from urllib.parse import urlparse
 
 def format_user_details(user_name):
     name_parts = user_name.split(' ')
@@ -18,7 +19,7 @@ def format_user_details(user_name):
 def send_to_sailpoint(user_name, email, api_url, auth_header):
     family_name, given_name, display_name = format_user_details(user_name)
 
-    payload = {
+    payload = json.dumps({
         "userName": user_name,
         "name": {
             "formatted": display_name,
@@ -36,7 +37,7 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
                 "primary": "true"
             }
         ],
-    }
+    })
 
     headers = {
         'Content-Type': 'application/scim+json',
@@ -44,22 +45,21 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
         'Authorization': auth_header
     }
 
-    # Validate URL
-    if not api_url.startswith(('http://', 'https://')):
-        raise ValueError("Invalid API URL. It must start with http:// or https://")
+    # Parse the URL
+    parsed_url = urlparse(api_url)
+    if not parsed_url.scheme or not parsed_url.netloc:
+        raise ValueError("Invalid API URL. It must include http:// or https://")
 
-    try:
-        response = requests.post(f'{api_url}/identityiq/scim/v2/Users', headers=headers, json=payload)
-        response.raise_for_status()  # Raise HTTPError for bad responses
-        return {
-            'statusCode': response.status_code,
-            'body': response.text
-        }
-    except requests.RequestException as e:
-        return {
-            'statusCode': 500,
-            'body': str(e)
-        }
+    conn = http.client.HTTPConnection(parsed_url.netloc) if parsed_url.scheme == 'http' else http.client.HTTPSConnection(parsed_url.netloc)
+    conn.request("POST", f'{parsed_url.path}/identityiq/scim/v2/Users', payload, headers)
+
+    res = conn.getresponse()
+    data = res.read()
+
+    return {
+        'statusCode': res.status,
+        'body': data.decode('utf-8')
+    }
 
 if __name__ == "__main__":
     # Read data from last_entry.json
