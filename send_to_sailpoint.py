@@ -1,5 +1,6 @@
 import http.client
 import json
+import os
 
 def format_user_details(user_name):
     name_parts = user_name.split(' ')
@@ -61,8 +62,10 @@ if __name__ == "__main__":
     
     user_name = data.get('userName', 'defaultUserName')
     email = data.get('email', 'default@example.com')
-    api_url = '35.170.66.218'       # Replace with your API URL
-    auth_header = 'Basic c3BhZG1pbjphZG1pbg=='  # Replace with your actual auth header
+    
+    # Retrieve secrets from environment variables
+    api_url = os.getenv('SAILPOINT_API_URL', 'localhost')  # Default value if not set
+    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '')  # Default value if not set
 
     response = send_to_sailpoint(user_name, email, api_url, auth_header)
     print(f"Status Code: {response['statusCode']}")
