@@ -29,7 +29,7 @@ def process_csv_file(csv_file_path):
 def main():
     csv_file_path = os.getenv('CSV_FILE_PATH', 'data.csv')
     api_url = os.getenv('SAILPOINT_API_URL', 'localhost')
-    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', 'Basic c3BhZG1pbjphZG1pbg==')
+    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '')
 
     logging.info(f"Processing CSV file: {csv_file_path}")
 
