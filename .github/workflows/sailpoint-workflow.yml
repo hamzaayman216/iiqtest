@@ -3,7 +3,7 @@ name: Trigger SailPoint API on CSV Update
 on:
   push:
     paths:
-      - 'data.csv'  # Watch for changes to the CSV file
+      - 'data.csv' 
 
 jobs:
   trigger-sailpoint:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'  # Use the desired Python version
+        python-version: '3.x' 
 
     - name: Create and activate virtual environment
       run: |
