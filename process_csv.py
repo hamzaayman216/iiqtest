@@ -1,33 +1,30 @@
 import csv
 import json
-import sys
 
 def extract_last_entry(csv_file_path):
-    last_entry = None
-    try:
-        with open(csv_file_path, 'r') as file:
-            reader = list(csv.reader(file))
-            if reader:
-                last_entry = reader[-1]
-    except Exception as e:
-        print(f"Error reading CSV file: {e}")
+    with open(csv_file_path, mode='r') as file:
+        reader = csv.reader(file)
+        rows = list(reader)
+        last_entry = rows[-1] if rows else None
     return last_entry
 
-def save_entry_to_json(entry, json_file_path):
-    if entry:
-        entry_json = {
-            "name": entry[0],
-            "email": entry[1]
-        }
-        with open(json_file_path, 'w') as file:
-            json.dump(entry_json, file)
-    else:
-        with open(json_file_path, 'w') as file:
-            json.dump({}, file)
+def main():
+    csv_file_path = 'data.csv'  # Path to your CSV file
+    last_entry = extract_last_entry(csv_file_path)
+    
+    if not last_entry or len(last_entry) < 2:
+        raise ValueError("Invalid CSV format or insufficient data.")
+    
+    user_name = last_entry[0]  # Assuming userName is in the first column
+    email = last_entry[1]      # Assuming email is in the second column
+    
+    # Save to JSON file
+    data = {
+        'userName': user_name,
+        'email': email
+    }
+    with open('last_entry.json', 'w') as json_file:
+        json.dump(data, json_file)
 
 if __name__ == "__main__":
-    csv_file_path = 'data.csv'
-    json_file_path = 'last_entry.json'
-
-    last_entry = extract_last_entry(csv_file_path)
-    save_entry_to_json(last_entry, json_file_path)
+    main()
