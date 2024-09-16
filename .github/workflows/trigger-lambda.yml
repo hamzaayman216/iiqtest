@@ -45,30 +45,4 @@ jobs:
         LAMBDA_FUNCTION_API_KEY: ${{ secrets.LAMBDA_FUNCTION_API_KEY }}
       run: |
         source venv/bin/activate
-        python -c "
-import json
-import requests
-
-with open('last_entry.json') as f:
-    last_entry = json.load(f)
-
-if not last_entry:
-    print('No valid last entry found.')
-    exit(1)
-
-name = last_entry.get('name', '')
-email = last_entry.get('email', '')
-
-response = requests.post(
-    url='${{ secrets.LAMBDA_FUNCTION_URL }}',
-    headers={
-        'Content-Type': 'application/json',
-        'x-api-key': '${{ secrets.LAMBDA_FUNCTION_API_KEY }}'
-    },
-    json={
-        'userName': name,
-        'email': email
-    }
-)
-print(response.status_code, response.text)
-"
+        python send_to_lambda.py $LAMBDA_FUNCTION_URL $LAMBDA_FUNCTION_API_KEY
