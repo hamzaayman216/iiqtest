@@ -1,7 +1,6 @@
-import os
-import json
 import http.client
-from urllib.parse import urlparse
+import json
+import os
 
 def format_user_details(user_name):
     name_parts = user_name.split(' ')
@@ -17,6 +16,8 @@ def format_user_details(user_name):
     return family_name, given_name, display_name
 
 def send_to_sailpoint(user_name, email, api_url, auth_header):
+    conn = http.client.HTTPConnection(api_url, 8080)
+
     family_name, given_name, display_name = format_user_details(user_name)
 
     payload = json.dumps({
@@ -45,20 +46,13 @@ def send_to_sailpoint(user_name, email, api_url, auth_header):
         'Authorization': auth_header
     }
 
-    # Parse the URL
-    parsed_url = urlparse(api_url)
-    if not parsed_url.scheme or not parsed_url.netloc:
-        raise ValueError("Invalid API URL. It must include http:// or https://")
-
-    conn = http.client.HTTPConnection(parsed_url.netloc) if parsed_url.scheme == 'http' else http.client.HTTPSConnection(parsed_url.netloc)
-    conn.request("POST", f'{parsed_url.path}/identityiq/scim/v2/Users', payload, headers)
-
+    conn.request("POST", "/identityiq/scim/v2/Users", payload, headers)
     res = conn.getresponse()
     data = res.read()
 
     return {
         'statusCode': res.status,
-        'body': data.decode('utf-8')
+        'body': data.decode("utf-8")
     }
 
 if __name__ == "__main__":
@@ -70,12 +64,8 @@ if __name__ == "__main__":
     email = data.get('email', 'default@example.com')
     
     # Retrieve secrets from environment variables
-    api_url = os.getenv('SAILPOINT_API_URL')
-    auth_header = os.getenv('SAILPOINT_AUTH_HEADER')
-
-    if not api_url or not auth_header:
-        print("API URL or Authorization Header is missing.")
-        exit(1)
+    api_url = os.getenv('SAILPOINT_API_URL', 'localhost')  # Default value if not set
+    auth_header = os.getenv('SAILPOINT_AUTH_HEADER', '')  # Default value if not set
 
     response = send_to_sailpoint(user_name, email, api_url, auth_header)
     print(f"Status Code: {response['statusCode']}")
