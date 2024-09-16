@@ -6,7 +6,7 @@ SAILPOINT_API_URL = os.getenv('SAILPOINT_API_URL', 'localhost')
 SAILPOINT_AUTH_HEADER = os.getenv('SAILPOINT_AUTH_HEADER', '')
 
 def format_user_details(user_name):
-    name_parts = user_name.split(' ')
+    name_parts = user_name.split('.')
     if len(name_parts) > 1:
         given_name = name_parts[0]
         family_name = ' '.join(name_parts[1:])
